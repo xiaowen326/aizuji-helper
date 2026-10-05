@@ -1,6 +1,7 @@
 /**
  * 爱租机委外催收系统小助手 - 主脚本
  * 功能：批量查询订单信息（含预留联系人）、批量添加催记、批量查询还款状态
+ * 密码验证通过 window.AiZuJiHelperInit(password) 入口
  */
 
 (function () {
@@ -8,9 +9,11 @@
 
     // ========== 全局配置 ==========
     const CONFIG = {
-        version: '1.0.0',
+        version: '1.1.0',
         name: '爱租机小助手',
         logPrefix: '[爱租机小助手]',
+        // 访问密码（远程校验，可随时改）
+        password: '99999',
         // API基础地址
         apiBase: 'https://internet-backend-gateway.woaizuji.com/fundApplication',
         // 默认并发数
@@ -949,7 +952,11 @@
     };
 
     // ========== 主入口 ==========
+    let initialized = false;
+
     function init() {
+        if (initialized) return { success: true, message: '已初始化' };
+
         Log.info(`v${CONFIG.version} 启动中...`);
 
         // 初始化UI
@@ -980,15 +987,18 @@
             alert('设置已保存（当前版本为内存存储）');
         };
 
+        initialized = true;
         Log.success('初始化完成！爱租机小助手已就绪');
+        return { success: true };
     }
 
-    // 页面加载完成后启动
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', init);
-    } else {
-        init();
-    }
+    // 对外暴露初始化入口（加载器调用，密码在远程校验）
+    window.AiZuJiHelperInit = function(password) {
+        if (password !== CONFIG.password) {
+            return { success: false, message: '密码错误，请重试' };
+        }
+        return init();
+    };
 
     // 暴露到全局，方便调试
     window.AiZuJiHelper = {
