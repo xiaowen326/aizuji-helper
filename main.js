@@ -19,6 +19,8 @@
         pollInterval: 300,
         // 请求超时
         requestTimeout: 30000,
+        // XLSX CDN地址
+        xlsxCdn: 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js',
     };
 
     // ========== 日志系统 ==========
@@ -53,6 +55,31 @@
             return new Promise(resolve => setTimeout(resolve, ms));
         },
 
+        // 确保XLSX库已加载
+        _xlsxLoaded: null,
+        ensureXLSX() {
+            if (typeof XLSX !== 'undefined') {
+                return Promise.resolve(XLSX);
+            }
+            if (this._xlsxLoaded) {
+                return this._xlsxLoaded;
+            }
+            this._xlsxLoaded = new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = CONFIG.xlsxCdn;
+                script.onload = () => {
+                    Log.success('XLSX 库加载成功');
+                    resolve(window.XLSX);
+                };
+                script.onerror = () => {
+                    this._xlsxLoaded = null;
+                    reject(new Error('XLSX 库加载失败'));
+                };
+                document.head.appendChild(script);
+            });
+            return this._xlsxLoaded;
+        },
+
         // 并发控制的Promise池
         async asyncPool(poolLimit, array, iteratorFn) {
             const ret = [];
@@ -72,7 +99,8 @@
         },
 
         // 读取Excel文件
-        readExcel(file) {
+        async readExcel(file) {
+            await this.ensureXLSX();
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
                 reader.onload = function (e) {
@@ -92,7 +120,8 @@
         },
 
         // 导出Excel
-        exportExcel(data, filename) {
+        async exportExcel(data, filename) {
+            await this.ensureXLSX();
             const ws = XLSX.utils.json_to_sheet(data);
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, '查询结果');
@@ -883,7 +912,7 @@
             };
         },
 
-        export() {
+        async export() {
             if (this.results.length === 0) {
                 alert('没有可导出的数据！');
                 return;
@@ -893,7 +922,7 @@
                 const copy = { ...row };
                 return copy;
             });
-            Utils.exportExcel(exportData, `爱租机订单查询_${Utils.formatTime().replace(/[:\s-]/g, '')}.xlsx`);
+            await Utils.exportExcel(exportData, `爱租机订单查询_${Utils.formatTime().replace(/[:\s-]/g, '')}.xlsx`);
             Log.success('查询结果已导出');
             UI.appendLog('sms', '💾 结果已导出Excel', 'success');
         },
@@ -928,7 +957,7 @@
 
         // 绑定功能按钮
         document.getElementById('azh-sms-start').onclick = () => SmsModule.start();
-        document.getElementById('azh-sms-export').onclick = () => SmsModule.export();
+        document.getElementById('azh-sms-export').onclick = async () => SmsModule.export();
         const collectionBtn = document.getElementById('azh-collection-start');
         if (collectionBtn) collectionBtn.onclick = () => CollectionModule.start();
         const repaymentBtn = document.getElementById('azh-repayment-start');
