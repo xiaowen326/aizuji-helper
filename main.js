@@ -929,8 +929,10 @@
         // 绑定功能按钮
         document.getElementById('azh-sms-start').onclick = () => SmsModule.start();
         document.getElementById('azh-sms-export').onclick = () => SmsModule.export();
-        document.getElementById('azh-collection-start')?.onclick = () => CollectionModule.start();
-        document.getElementById('azh-repayment-start')?.onclick = () => RepaymentModule.start();
+        const collectionBtn = document.getElementById('azh-collection-start');
+        if (collectionBtn) collectionBtn.onclick = () => CollectionModule.start();
+        const repaymentBtn = document.getElementById('azh-repayment-start');
+        if (repaymentBtn) repaymentBtn.onclick = () => RepaymentModule.start();
 
         // 查询方式切换
         document.querySelectorAll('input[name="sms-mode"]').forEach(radio => {
