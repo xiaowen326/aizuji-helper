@@ -111,7 +111,8 @@
             try {
                 const keys = Object.keys(localStorage);
                 for (const key of keys) {
-                    if (key.toLowerCase().includes('token') || key.toLowerCase().includes('azjtk')) {
+                    const lowerKey = key.toLowerCase();
+                    if (lowerKey.indexOf('token') !== -1 || lowerKey.indexOf('azjtk') !== -1) {
                         const val = localStorage.getItem(key);
                         if (val && val.length > 50) return val;
                     }
@@ -120,9 +121,14 @@
             // 尝试从cookie获取
             try {
                 const cookies = document.cookie.split(';');
-                for (const c of cookies) {
-                    const [k, v] = c.trim().split('=');
-                    if (k.toLowerCase().includes('token') || k.toLowerCase().includes('azjtk')) {
+                for (let i = 0; i < cookies.length; i++) {
+                    const c = cookies[i].trim();
+                    const eqIndex = c.indexOf('=');
+                    if (eqIndex === -1) continue;
+                    const k = c.substring(0, eqIndex);
+                    const v = c.substring(eqIndex + 1);
+                    const lowerK = k.toLowerCase();
+                    if (lowerK.indexOf('token') !== -1 || lowerK.indexOf('azjtk') !== -1) {
                         return v;
                     }
                 }
